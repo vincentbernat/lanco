@@ -1,0 +1,179 @@
+.\" Copyright (c) 2013 Vincent Bernat <vincent.bernat@dailymotion.com>
+.\"
+.\" Permission to use, copy, modify, and/or distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate: February 05 2013 $
+.Dt LANCO 8
+.Os
+.Sh NAME
+.Nm lanco
+.Nd task launcher
+.Sh SYNOPSIS
+.Nm
+.Op Fl dv
+.Op Fl D Ar debug
+.Ar namespace
+.Ar command
+.Op ...
+.Sh DESCRIPTION
+.Nm
+is a task launcher which does not want to be an init program. It can
+run any task, stop them and check if they are still running. It
+leverages cgroups in recent Linux kernels by enclosing each task in a
+dedicated cgroup.
+.Pp
+.Nm
+does not have any daemon.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl d
+Be more verbose. This option can be repeated twice to enable debug
+mode. Debug messages can then be filtered with
+.Fl D
+flag.
+.It Fl D Ar debug
+This option allows the user to filter out debugging information by
+specifying allowed tokens. This option can be repeated several times
+to allow several tokens. This option must be combined with the
+.Fl d
+flag to have some effect. Only debugging logs can be filtered.
+.El
+.Nm
+expects to be called with a namespace. Namespaces allow a user to use
+.Nm
+for several different usages. After a namespace, a command is
+expected. Each command has its own set of options described below.
+.Sh COMMANDS
+.Nm
+accepts the following commands:
+
+.Cd init
+.Op Fl u Ar user
+.Op Fl g Ar group
+.Bd -ragged -offset XX
+Initialize the namespace for use by the given user and group. This
+commands is mandatory to be able to use the other commands with the
+given namespace. It also allows one to run subsequent
+.Nm
+commands without special privileges.
+.Ed
+
+.Cd run
+.Op Fl f
+.Op Fl l Ar logfile
+.Ar taskname
+.Ar command
+.Bd -ragged -offset XX
+Run the provided command in the namespace as task
+.Ar taskname .
+The command will fail if the task is already running. If the
+.Fl f
+flag is provided, the command will be run in foreground. Otherwise,
+the standard input will be closed, the standard output and the
+standard error are redirected to a file
+.Ar logfile
+or to
+.Pa /var/log/lanco-XXXXX/YYYYY.log
+where the first pattern is the namespace and the second is the task
+name. If the log file already exists, it will be rotated.
+.Ed
+
+.Cd stop
+.Ar taskname
+.Bd -ragged -offset XX
+Stop the provided task. The command will fail if the task is not
+running. A process can evade this command by creating a sub-cgroup in
+the named hierarchy. This should not happen since the hierarchy is
+reserved for
+.Nm
+use.
+.Ed
+
+.Cd release
+.Op Ar taskname
+.Bd -ragged -offset XX
+Release a the privided task. If no task is provided, release the whole
+cgroup. For a task to be released, it should not be running. In this
+case, it should have been released automatically. This command is
+called internally for this purpose. For the whole namespace to be
+released, no task should be present. This command does not clean the
+log files.
+.Ed
+
+.Cd check
+.Ar taskname
+.Bd -ragged -offset XX
+Check if the provided task is already running. The exit status will be
+0 if the task is running and 1 otherwise.
+.Ed
+
+.Sh ENVIRONMENT
+It is expected that
+.Nm
+is run in a kernel supporting cgroups. If your kernel supports
+cgroups, the
+.Pa /sys/fs/cgroups
+directory exists. Usually, this directory is then populated by
+individual controllers. Usually, you get one directory for each of
+them. For example,
+.Pa /sys/fs/cgroups/memory
+is the root of a hierarchy controlled by the memory subsystem.
+.Pp
+.Nm
+can take advantage of cpu accounting subsystem to track CPU usage of
+each task. Usually, this subsystem is joined with the cpu
+subsystem. This means you should have a
+.Pa /sys/fs/cgroups/cpu,cpuacct
+directory which is a hierarchy controlled by both the cpu subsystem
+and the cpu accounting subsystem. If you have
+.Pa /sys/fs/cgroups/cpuacct
+directory or a
+.Pa /sys/fs/cgroups/cpu,cpuacct
+directory, all should work fine. If not,
+.Nm
+will try to create
+.Pa /sys/fs/cgroups/cpu,cpuacct
+during initialization of the first namespace. It will also create a
+symlink
+.Pa /sys/fs/cgroups/cpuacct .
+This mimics the expected usage.
+.Pp
+If the creation of the cpu accounting subsystem fail,
+.Nm
+won't be able to track CPU usage. This may happen if you have all
+subsystems mounted in
+.Pa /sys/fs/cgroups .
+You should fix your system to not do that. Mounting all subsystems in
+the same hierarchy may enable subsystems that need user input to be
+functional, like cpuset.
+
+.Sh FILES
+.Bl -tag -width "/sys/fs/cgroup/lanco-XXXXX" -compact
+.It /sys/fs/cgroup/lanco-XXXXX
+Named cgroup for a given namespace.
+.It /var/log/lanco-XXXXX/YYYYYYY.log
+Log file for a given task in a given namespace. Those files are
+automatically rotated.
+.It /var/run/lanco-XXXXX/@release-agent
+Symbolic link to
+.Nm
+to act as a release agent for cgroups.
+.El
+
+.Sh AUTHORS
+.An -nosplit
+The
+.Nm
+program was written by
+.An Vincent Bernat Aq vincent.bernat@dailymotion.com .
