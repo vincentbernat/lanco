@@ -352,6 +352,105 @@ end:
 	return rc;
 }
 
+/**
+ * Visit each task in a namespace.
+ *
+ * @param namespace Namespace we need to find the task.
+ * @param vist      Function be called on each task.
+ * @return 0 on success and -1 on error
+ */
+int
+cg_iterate_tasks(const char *namespace,
+    int(*visit)(const char *namespace, const char *task))
+{
+	int rc = -1;
+	char *path = NULL;
+	DIR *dir = NULL;
+	if (asprintf(&path, "%s/lanco-%s", CGROOT, namespace) == -1) {
+		log_warn("cgroups", "unable to allocate memory for tasks iteration");
+		goto end;
+	}
+
+	if ((dir = opendir(path)) == NULL) {
+		log_warn("cgroups", "unable to open namespace directory %s",
+		    namespace);
+		goto end;
+	}
+	struct dirent *dirent;
+	while ((dirent = readdir(dir))) {
+		const char *name = dirent->d_name + strlen("task-");
+		if (dirent->d_type != DT_DIR) continue;
+		if (strncmp(dirent->d_name, "task-", strlen("task-"))) continue;
+		log_debug("cgroups", "found task %s in namespace %s",
+		    name, namespace);
+		if (visit(namespace, name) == -1) goto end;
+	}
+
+	rc = 0;
+end:
+	if (dir) closedir(dir);
+	free(path);
+	return rc;
+}
+
+/**
+ * Visit each PID for a task.
+ *
+ * @param namespace Namespace we need to find the task.
+ * @param task      Task name.
+ * @param vist      Function be called on each PID.
+ */
+int
+cg_iterate_pids(const char *namespace, const char *task,
+    int(*visit)(const char *namespace, const char *task, pid_t pid))
+{
+	int rc = -1;
+	char *path = NULL;
+	FILE *tasks = NULL;
+	TAILQ_HEAD(, one_pid) pids;
+	TAILQ_INIT(&pids);
+
+	if (asprintf(&path, "%s/lanco-%s/task-%s/tasks",
+		CGROOT, namespace, task) == -1) {
+		log_warn("cgroups", "unable to allocate memory for tasks iteration");
+		goto end;
+	}
+	if ((tasks = fopen(path, "r")) == NULL) {
+		log_warn("cgroups", "unable to open tasks file %s", path);
+		goto end;
+	}
+	pid_t pid;
+	while (fscanf(tasks, "%d", &pid) == 1) {
+		int found = 0;
+		struct one_pid *new;
+		TAILQ_FOREACH(new, &pids, next) {
+			if (new->pid == pid) {
+				found = 1;
+				break;
+			}
+		}
+		if (found) continue;
+		if ((new = malloc(sizeof(struct one_pid))) == NULL) {
+			log_warn("cgroups", "memory allocation failure");
+			goto end;
+		}
+		new->pid = pid;
+		TAILQ_INSERT_TAIL(&pids, new, next);
+		if (visit(namespace, task, pid) == -1) goto end;
+	}
+
+	rc = 0;
+end:
+	while (!TAILQ_EMPTY(&pids)) {
+		struct one_pid *first = TAILQ_FIRST(&pids);
+		TAILQ_REMOVE(&pids, first, next);
+		free(first);
+	}
+	if (tasks) fclose(tasks);
+	free(path);
+	return rc;
+}
+
 
 /**
  * Check if the given named hierarchy exists.

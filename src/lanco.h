@@ -38,6 +38,7 @@ int cmd_run    (const char *, int, char * const *);
 int cmd_stop   (const char *, int, char * const *);
 int cmd_check  (const char *, int, char * const *);
 int cmd_release(const char *, int, char * const *);
+int cmd_ls     (const char *, int, char * const *);
 
 /* cgroups.c */
 #define CGROOTPARENT "/sys/fs"
@@ -51,6 +52,10 @@ int cg_exist_task(const char*, const char*, ino_t *);
 int cg_create_task(const char*, const char*);
 int cg_release_task(const char*, const char*);
 int cg_kill_task(const char*, const char*, ino_t, int);
+int cg_iterate_tasks(const char *,
+    int(*visit)(const char *, const char *));
+int cg_iterate_pids(const char *, const char *,
+    int(*visit)(const char *, const char *, pid_t));
 
 /* utils.c */
 int utils_is_mount_point(const char *, const char *);
