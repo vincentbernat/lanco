@@ -72,6 +72,7 @@ commands without special privileges.
 .Cd run
 .Op Fl f
 .Op Fl l Ar logfile
+.Op Fl c Ar command
 .Ar taskname
 .Ar command
 .Bd -ragged -offset XX
@@ -86,7 +87,13 @@ standard error are redirected to a file
 or to
 .Pa /var/log/lanco-XXXXX/YYYYY.log
 where the first pattern is the namespace and the second is the task
-name. If the log file already exists, it will be rotated.
+name. If the log file already exists, it will be rotated. With the
+.Fl c
+flag,
+.Nm
+will run the provided command when the task exits. This allows one to
+be notified of the task completion. The command is run by
+.Pa /bin/sh .
 .Ed
 
 .Cd stop
@@ -101,6 +108,7 @@ use.
 .Ed
 
 .Cd release
+.Op Fl n
 .Op Ar taskname
 .Bd -ragged -offset XX
 Release a the privided task. If no task is provided, release the whole
@@ -108,7 +116,10 @@ cgroup. For a task to be released, it should not be running. In this
 case, it should have been released automatically. This command is
 called internally for this purpose. For the whole namespace to be
 released, no task should be present. This command does not clean the
-log files.
+log files. The
+.Fl n
+flag disables execution of registered command to be run on task
+exit. It does not have any effect if no task is provided.
 .Ed
 
 .Cd check

@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <grp.h>
+#include <errno.h>
 
 extern const char *__progname;
 
@@ -36,8 +37,51 @@ usage(void)
 	fprintf(stderr, "\n");
 	fprintf(stderr, "-f         run in foreground.\n");
 	fprintf(stderr, "-l logfile log output to the following file.\n");
+	fprintf(stderr, "-c command execute a command when the task exits.\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "see manual page lanco(8) for more information\n");
+}
+
+/**
+ * Register a command to be run when the task exits. Only one such command can
+ * be registered. This is done by creating a file
+ * /var/run/lanco-XXXX/task-exit-XXXXX containing the command. The release agent
+ * will execute it.
+ *
+ * @param namespace Namespace.
+ * @param task      Task name.
+ * @param command   Command to execute or NULL if no command
+ * @return 0 on success, -1 on error.
+ */
+static int
+register_command(const char *namespace, const char *task, const char *command)
+{
+	char *path = NULL;
+	if (asprintf(&path, RUNPREFIX "/lanco-%s/task-exit-%s",
+		namespace, task) == -1) {
+		log_warn("run", "unable to allocate memory for new command");
+		return -1;
+	}
+	if (unlink(path) == -1 && errno != ENOENT) {
+		log_warn("run", "cannot remove old command file %s",
+		    path);
+		free(path);
+		return -1;
+	}
+
+	if (command) {
+		log_debug("run", "register new command for task %s", task);
+		FILE *fcommand = fopen(path, "w");
+		if (fcommand == NULL) {
+			log_warn("run", "unable to create file %s", path);
+			free(path);
+			return -1;
+		}
+		free(path);
+		fprintf(fcommand, "%s", command);
+		fclose(fcommand);
+	}
+	return 0;
 }
 
 int
@@ -46,8 +90,9 @@ cmd_run(const char *namespace, int argc, char * const argv[])
 	int ch;
 	int background = 1;
 	char *logfile = NULL;
+	char *command = NULL;
 
-	while ((ch = getopt(argc, argv, "hl:f")) != -1) {
+	while ((ch = getopt(argc, argv, "hl:fc:")) != -1) {
 		switch (ch) {
 		case 'h':
 			usage();
@@ -57,6 +102,9 @@ cmd_run(const char *namespace, int argc, char * const argv[])
 			break;
 		case 'l':
 			logfile = optarg;
+			break;
+		case 'c':
+			command = optarg;
 			break;
 		default:
 			usage();
@@ -93,6 +141,11 @@ cmd_run(const char *namespace, int argc, char * const argv[])
 	log_debug("run", "creating sub-cgroup for task %s", task);
 	if (cg_create_task(namespace, task)) {
 		log_warnx("run", "unable to create sub-cgroup for task %s", task);
+		return -1;
+	}
+
+	if (register_command(namespace, task, command) == -1) {
+		log_warnx("run", "unable to register command for task %s", task);
 		return -1;
 	}
 
