@@ -27,6 +27,7 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <sys/types.h>
 
 #define LOGPREFIX "/var/log"
@@ -39,6 +40,7 @@ int cmd_stop   (const char *, int, char * const *);
 int cmd_check  (const char *, int, char * const *);
 int cmd_release(const char *, int, char * const *);
 int cmd_ls     (const char *, int, char * const *);
+int cmd_top    (const char *, int, char * const *);
 
 /* cgroups.c */
 #define CGROOTPARENT "/sys/fs"
@@ -53,9 +55,12 @@ int cg_create_task(const char*, const char*);
 int cg_release_task(const char*, const char*);
 int cg_kill_task(const char*, const char*, ino_t, int);
 int cg_iterate_tasks(const char *,
-    int(*visit)(const char *, const char *));
+    int(*visit)(const char *, const char *, void *),
+    void *);
 int cg_iterate_pids(const char *, const char *,
-    int(*visit)(const char *, const char *, pid_t));
+    int(*visit)(const char *, const char *, pid_t, void*),
+    void *);
+uint64_t cg_cpu_usage(const char*, const char*);
 
 /* utils.c */
 int utils_is_mount_point(const char *, const char *);

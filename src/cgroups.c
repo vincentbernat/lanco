@@ -356,12 +356,14 @@ end:
  * Visit each task in a namespace.
  *
  * @param namespace Namespace we need to find the task.
- * @param vist      Function be called on each task.
+ * @param visit     Function be called on each task.
+ * @param arg       Argument passed as last argument of the visitor function.
  * @return 0 on success and -1 on error
  */
 int
 cg_iterate_tasks(const char *namespace,
-    int(*visit)(const char *namespace, const char *task))
+    int(*visit)(const char *namespace, const char *task, void *),
+    void *arg)
 {
 	int rc = -1;
 	char *path = NULL;
@@ -383,7 +385,7 @@ cg_iterate_tasks(const char *namespace,
 		if (strncmp(dirent->d_name, "task-", strlen("task-"))) continue;
 		log_debug("cgroups", "found task %s in namespace %s",
 		    name, namespace);
-		if (visit(namespace, name) == -1) goto end;
+		if (visit(namespace, name, arg) == -1) goto end;
 	}
 
 	rc = 0;
@@ -398,11 +400,13 @@ end:
  *
  * @param namespace Namespace we need to find the task.
  * @param task      Task name.
- * @param vist      Function be called on each PID.
+ * @param visit     Function be called on each PID.
+ * @param arg       Argument passed as last argument of the visitor function.
  */
 int
 cg_iterate_pids(const char *namespace, const char *task,
-    int(*visit)(const char *namespace, const char *task, pid_t pid))
+    int(*visit)(const char *namespace, const char *task, pid_t pid, void *),
+    void *arg)
 {
 	int rc = -1;
 	char *path = NULL;
@@ -436,7 +440,7 @@ cg_iterate_pids(const char *namespace, const char *task,
 		}
 		new->pid = pid;
 		TAILQ_INSERT_TAIL(&pids, new, next);
-		if (visit(namespace, task, pid) == -1) goto end;
+		if (visit(namespace, task, pid, arg) == -1) goto end;
 	}
 
 	rc = 0;
@@ -568,6 +572,78 @@ cg_delete_hierarchies(const char *name)
 	cg_delete_cpuacct_hierarchy(name);
 	cg_delete_release_agent(name);
 	return 0;
+}
+
+/**
+ * Get a property of a given cgroup.
+ * @param controller Controller to use or NULL for none
+ * @param namespace  Namespace to process
+ * @param task       Task name or NULL if not task
+ * @param property   Property to get.
+ * @return a string with the property or NULL on error
+ *
+ * The string should be freed after usage.
+ */
+static char *
+cg_get_property(const char *controller, const char *namespace,
+    const char *task, const char *property)
+{
+	char *path = NULL;
+	if (asprintf(&path, "%s/%s/lanco-%s/%s%s/%s", CGROOT, controller?controller:"",
+		namespace, task?"task-":"", task?task:"", property) == -1) {
+		log_warn("cgroups", "unable to allocate memory to get property");
+		return NULL;
+	}
+
+	FILE *fproperty = fopen(path, "r");
+	if (fproperty == NULL) {
+		log_debug("cgroups", "unable to open %s", path);
+		free(path);
+		return NULL;
+	}
+	char *result = NULL; size_t n;
+	if (getline(&result, &n, fproperty) == -1) {
+		log_warn("cgroups", "unable to read property from %s", path);
+		free(path);
+		return NULL;
+	}
+	free(path);
+	if (strlen(result) == 0) {
+		free(result);
+		return NULL;
+	}
+	if (result[strlen(result) - 1] == '\n')
+		result[strlen(result) - 1] = '\0';
+	if (strlen(result) == 0) {
+		free(result);
+		return NULL;
+	}
+	return result;
+}
+
+/**
+ * Get CPU usage for a whole namespace or just a task.
+ *
+ * @param namespace  Namespace to process
+ * @param task       Task name or NULL if not task
+ * @return CPU usage or 0 if not available
+ */
+uint64_t
+cg_cpu_usage(const char *namespace, const char *task)
+{
+	char *usagestr = cg_get_property("cpuacct", namespace, task,
+	    "cpuacct.usage");
+	if (usagestr == NULL) return 0; /* Not available */
+
+	char *end;
+	long long unsigned usage = strtoll(usagestr, &end, 10);
+	if (*end != '\0') {
+		log_warnx("cgroups", "unable to parse CPU usage");
+		free(usagestr);
+		return 0;
+	}
+	free(usagestr);
+	return (usage > 0)?usage:1;
 }
 
 /**

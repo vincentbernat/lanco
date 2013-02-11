@@ -34,8 +34,10 @@ usage(void)
 }
 
 static int
-one_pid(const char *namespace, const char *task, pid_t pid)
+one_pid(const char *namespace, const char *task, pid_t pid, void *arg)
 {
+	(void)arg;
+
 	/* Retrieve command line from /proc/PID/cmdline */
 	char *path = NULL;
 	FILE *cmdline = NULL;
@@ -66,10 +68,11 @@ one_pid(const char *namespace, const char *task, pid_t pid)
 }
 
 static int
-one_task(const char *namespace, const char *task)
+one_task(const char *namespace, const char *task, void *arg)
 {
+	(void)arg;
 	fprintf(stdout, " ├ %s\n", task);
-	return cg_iterate_pids(namespace, task, one_pid);
+	return cg_iterate_pids(namespace, task, one_pid, NULL);
 }
 
 int
@@ -89,7 +92,7 @@ cmd_ls(const char *namespace, int argc, char * const argv[])
 	}
 
 	fprintf(stdout, "%s\n", namespace);
-	if (cg_iterate_tasks(namespace, one_task) == -1) {
+	if (cg_iterate_tasks(namespace, one_task, NULL) == -1) {
 		log_warnx("ls", "error while walking tasks");
 		return -1;
 	}
