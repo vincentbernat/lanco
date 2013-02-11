@@ -272,6 +272,7 @@ curses_tasks(const char *namespace, void *arg)
 		    2, 0);
 	else
 		wresize(main_win, (height > 10)?(height - 8):height - 2, width);
+	wclear(main_win);
 	wmove(main_win, 1, 0);
 
 	curses_global_cpu(main_win, namespace, width);
