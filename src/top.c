@@ -76,6 +76,13 @@ one_task(const char *namespace, const char *name, void *arg)
 		log_warn("top", "unable to get current time");
 		return -1;
 	}
+
+	static int nbcpu = 0;
+	if (nbcpu == 0) {
+		nbcpu = sysconf(_SC_NPROCESSORS_ONLN);
+		if (nbcpu <= 0) nbcpu = 1;
+	}
+
 	uint64_t new_usage = cg_cpu_usage(namespace, name);
 	if (task->ts.tv_sec && new_usage > 0) {
 		uint64_t x, y;
@@ -86,7 +93,7 @@ one_task(const char *namespace, const char *name, void *arg)
 		y = new_usage - task->cpu_usage;
 
 		if (y > 0) {
-			task->cpu_percent = (double) y * (double) 100. / (double) x;
+			task->cpu_percent = (double) y * (double) 100. / (double) x / (double)nbcpu;
                 } else
 			task->cpu_percent = 0;
 	} else
@@ -168,6 +175,13 @@ curses_global_cpu(WINDOW *win, const char *namespace, int width)
 {
 	static uint64_t cpu_usage = 0;
 	static struct timespec ts = {};
+
+	static int nbcpu = 0;
+	if (nbcpu == 0) {
+		nbcpu = sysconf(_SC_NPROCESSORS_ONLN);
+		if (nbcpu <= 0) nbcpu = 1;
+	}
+
 	uint64_t new_usage;
 	struct timespec now;
 	if (clock_gettime(CLOCK_MONOTONIC, &now) == -1) {
@@ -181,7 +195,7 @@ curses_global_cpu(WINDOW *win, const char *namespace, int width)
 	    ((uint64_t) ts.tv_sec * 1000000000ULL + (uint64_t) ts.tv_nsec);
 	y = new_usage - cpu_usage;
 	if (y > 0) {
-		double percent = (double) y * (double) 100. / (double) x;
+		double percent = (double) y * (double) 100. / (double) x / (double) nbcpu;
 		wprintw(win, "  ");
 		curses_gauge(win, (percent < 100)?percent:100, width - 4);
 		wprintw(win, "\n\n");
