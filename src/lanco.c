@@ -45,6 +45,7 @@ static struct cmd lanco_cmds[] = {
 	{ "init",    cmd_init },
 	{ "run",     cmd_run  },
 	{ "stop",    cmd_stop },
+	{ "kill",    cmd_stop },
 	{ "check",   cmd_check },
 	{ "release", cmd_release },
 	{ "ls",      cmd_ls },
