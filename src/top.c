@@ -164,6 +164,46 @@ curses_gauge(WINDOW *win, float percent, int width)
 }
 
 static void
+curses_global_cpu(WINDOW *win, const char *namespace, int width)
+{
+	static uint64_t cpu_usage = 0;
+	static struct timespec ts = {};
+	uint64_t new_usage;
+	struct timespec now;
+	if (clock_gettime(CLOCK_MONOTONIC, &now) == -1) {
+		log_warn("top", "unable to get current time");
+		return;
+	}
+	new_usage = cg_cpu_usage(namespace, NULL);
+
+	uint64_t x, y;
+	x = ((uint64_t) now.tv_sec * 1000000000ULL + (uint64_t) now.tv_nsec) -
+	    ((uint64_t) ts.tv_sec * 1000000000ULL + (uint64_t) ts.tv_nsec);
+	y = new_usage - cpu_usage;
+	if (y > 0) {
+		double percent = (double) y * (double) 100. / (double) x;
+		wprintw(win, "  ");
+		curses_gauge(win, (percent < 100)?percent:100, width - 4);
+		wprintw(win, "\n\n");
+	}
+	cpu_usage = new_usage;
+	memcpy(&ts, &now, sizeof(struct timespec));
+}
+
+static void
+curses_task(WINDOW *win, struct one_task *task, int width)
+{
+	wattron(win, A_BOLD);
+	wprintw(win, " %-10s ", task->name);
+	wattroff(win, A_BOLD);
+	wprintw(win, "%5d proc%s ",
+	    task->nb, (task->nb > 1)?"s":" ");
+	if (task->cpu_usage > 0)
+		curses_gauge(win, task->cpu_percent, width - 30);
+	wprintw(win, "\n");
+}
+
+static void
 curses_tasks(const char *namespace, void *arg)
 {
 	TAILQ_HEAD(, one_task) *tasks = arg;
@@ -218,17 +258,11 @@ curses_tasks(const char *namespace, void *arg)
 		    2, 0);
 	else
 		wresize(main_win, (height > 10)?(height - 8):height - 2, width);
-	wmove(main_win, 0, 0);
-	TAILQ_FOREACH(task, tasks, next) {
-		wattron(main_win, A_BOLD);
-		wprintw(main_win, " %-10s ", task->name);
-		wattroff(main_win, A_BOLD);
-		wprintw(main_win, "%5d proc%s ",
-		    task->nb, (task->nb > 1)?"s":" ");
-		if (task->cpu_usage > 0)
-			curses_gauge(main_win, task->cpu_percent, width - 30);
-		wprintw(main_win, "\n");
-	}
+	wmove(main_win, 1, 0);
+
+	curses_global_cpu(main_win, namespace, width);
+	TAILQ_FOREACH(task, tasks, next)
+	    curses_task(main_win, task, width);
 
 	if (logs_win) wrefresh(logs_win);
 	if (main_win) wrefresh(main_win);
