@@ -266,3 +266,38 @@ utils_redirect_output(const char *logfile)
 	if (devnull > 2) close(devnull);
 	return 0;
 }
+
+/**
+ * Get command line for a given PID.
+ *
+ * @param pid PID to search for command line.
+ * @return statically allocated string with command line or NULL if not found
+ */
+char *
+utils_cmdline(pid_t pid)
+{
+	/* Retrieve command line from /proc/PID/cmdline */
+	char *path = NULL;
+	FILE *cmdline = NULL;
+	static char command[256] = {};
+
+	if (asprintf(&path, "/proc/%d/cmdline", pid) == -1) return 0;
+	cmdline = fopen(path, "r");
+	if (cmdline == NULL) {
+		/* Vanished? */
+		free(path);
+		return NULL;
+	}
+	free(path);
+
+	int nb = fread(command, 1, sizeof(command) - 1, cmdline);
+	fclose(cmdline);
+	if (nb <= 0) return NULL;
+	command[nb] = '\0';
+	while (--nb >= 0) {
+		if (command[nb] == '\0')
+			command[nb] = ' ';
+	}
+	return command;
+
+}

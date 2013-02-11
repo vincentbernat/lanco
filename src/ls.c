@@ -37,33 +37,8 @@ static int
 one_pid(const char *namespace, const char *task, pid_t pid, void *arg)
 {
 	(void)arg;
-
-	/* Retrieve command line from /proc/PID/cmdline */
-	char *path = NULL;
-	FILE *cmdline = NULL;
-	char command[256] = {};
-
-	if (asprintf(&path, "/proc/%d/cmdline", pid) == -1) return 0;
-	cmdline = fopen(path, "r");
-	if (cmdline == NULL) {
-		/* Vanished? */
-		free(path);
-		return 0;
-	}
-	free(path);
-
-	int nb = fread(command, 1, sizeof(command) - 1, cmdline);
-	fclose(cmdline);
-	if (nb <= 0) {
-		strcpy(command, "????");
-	} else {
-		while (--nb >= 0) {
-			if (command[nb] == '\0')
-				command[nb] = ' ';
-		}
-	}
-
-	fprintf(stdout, " │  → %5d %s\n", pid, command);
+	const char *command = utils_cmdline(pid);
+	fprintf(stdout, " │  → %5d %s\n", pid, command?command:"?????");
 	return 0;
 }
 

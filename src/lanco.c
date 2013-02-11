@@ -51,6 +51,7 @@ static struct cmd lanco_cmds[] = {
 	{ "release", cmd_release },
 	{ "ls",      cmd_ls },
 	{ "top",     cmd_top },
+	{ "dump",    cmd_dump },
 	{ NULL }
 };
 

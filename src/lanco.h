@@ -41,6 +41,7 @@ int cmd_check  (const char *, int, char * const *);
 int cmd_release(const char *, int, char * const *);
 int cmd_ls     (const char *, int, char * const *);
 int cmd_top    (const char *, int, char * const *);
+int cmd_dump   (const char *, int, char * const *);
 
 /* cgroups.c */
 #define CGROOTPARENT "/sys/fs"
@@ -69,5 +70,6 @@ int utils_is_dir_owned(const char *, uid_t, gid_t);
 int utils_is_valid_name(const char *);
 int utils_create_subdirectory(const char*, const char*, uid_t, gid_t);
 int utils_redirect_output(const char *);
+char * utils_cmdline(pid_t);
 
 #endif
