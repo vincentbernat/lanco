@@ -130,8 +130,8 @@ int
 utils_is_valid_name(const char *name)
 {
 	while (name) {
-		if ((!isalnum(*name) || !isascii(*name)) &&
-		    (*name != '-' || *name != '_'))
+		if (!((isalnum(*name) && isascii(*name)) ||
+			(*name == '-') || (*name == '_')))
 			break;
 		name++;
 	}
