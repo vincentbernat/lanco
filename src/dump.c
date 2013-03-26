@@ -106,7 +106,7 @@ cmd_dump(const char *namespace, int argc, char * const argv[])
 	    "tasks", tasks);
 	if (cpu > 0)
 		json_object_set_new(result, "cpu",
-		    json_integer(cg_cpu_usage(namespace, NULL)));
+		    json_integer(cpu));
 	if (nbcpus > 0)
 		json_object_set_new(result, "nbcpus",
 		    json_integer(nbcpus));
