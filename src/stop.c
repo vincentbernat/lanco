@@ -88,7 +88,9 @@ cmd_stop(const char *namespace, int argc, char * const argv[])
 			log_warnx("stop", "unable to stop task %s", task);
 			return -1;
 		}
-		while (i->wait > 0) {
+
+		int wait = i->wait;
+		while (wait-- > 0) {
 			sleep(1);
 			if (!cg_exist_task(namespace, task, &inode)) {
 				log_debug("stop", "task %s does not exist anymore",
