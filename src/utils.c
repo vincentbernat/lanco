@@ -72,12 +72,13 @@ utils_is_empty_dir(const char *path)
 	int n = 0;
 	DIR *dir = opendir(path);
 	if (dir == NULL) {
-		log_debug("utils", "cannot open directory %s", path);
+		log_warn("utils", "cannot open directory %s", path);
 		return 0;
 	}
+	errno = 0;
 	while (readdir(dir) && errno == 0) n++;
 	if (errno != 0) {
-		log_debug("utils", "unable to read directory %s", path);
+		log_warn("utils", "unable to read directory %s", path);
 		closedir(dir);
 		return 0;
 	}
