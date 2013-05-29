@@ -249,9 +249,13 @@ curses_tasks(const char *namespace, void *arg)
 		logs_win = newwin(8, width, height - 8, 0);
 		scrollok(logs_win, TRUE);
 		log_register(curses_log, logs_win);
-	} else if (logs_win) {
+	} else if (logs_win && height > 10) {
 		wresize(logs_win, 8, width);
-		wmove(logs_win, (height > 10)?(height - 8):height, 0);
+		wmove(logs_win, height - 8, 0);
+		wrefresh(logs_win);
+	} else if (logs_win) {
+		delwin(logs_win);
+		logs_win = NULL;
 	}
 
 	/* Status window */
