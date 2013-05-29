@@ -36,6 +36,7 @@ usage(void)
 	fprintf(stderr, "Version: %s\n", PACKAGE_STRING);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "-f         run in foreground.\n");
+	fprintf(stderr, "-L         force logging to a logfile.\n");
 	fprintf(stderr, "-l logfile log output to the following file.\n");
 	fprintf(stderr, "-c command execute a command when the task exits.\n");
 	fprintf(stderr, "\n");
@@ -92,13 +93,16 @@ cmd_run(const char *namespace, int argc, char * const argv[])
 	char *logfile = NULL;
 	char *command = NULL;
 
-	while ((ch = getopt(argc, argv, "hl:fc:")) != -1) {
+	while ((ch = getopt(argc, argv, "hLl:fc:")) != -1) {
 		switch (ch) {
 		case 'h':
 			usage();
 			return 0;
 		case 'f':
 			background = 0;
+			break;
+		case 'L':
+			logfile = "";
 			break;
 		case 'l':
 			logfile = optarg;
@@ -150,8 +154,9 @@ cmd_run(const char *namespace, int argc, char * const argv[])
 	}
 
 	/* Redirect output */
-	if (logfile) logfile = strdup(logfile);
-	if (!logfile && background &&
+	if (logfile && strlen(logfile)) logfile = strdup(logfile);
+	if (((!logfile && background) ||
+		(logfile && strlen(logfile) == 0)) &&
 	    asprintf(&logfile, LOGPREFIX "/lanco-%s/task-%s.log",
 		namespace, task) == -1) {
 		log_warn("run", "unable to allocate memory for logfile");

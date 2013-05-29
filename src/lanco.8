@@ -71,6 +71,7 @@ commands without special privileges.
 
 .Cd run
 .Op Fl f
+.Op Fl L
 .Op Fl l Ar logfile
 .Op Fl c Ar command
 .Ar taskname
@@ -87,7 +88,12 @@ standard error are redirected to a file
 or to
 .Pa /var/log/lanco-XXXXX/YYYYY.log
 where the first pattern is the namespace and the second is the task
-name. If the log file already exists, it will be rotated. With the
+name. If the log file already exists, it will be rotated. This
+behaviour can also be obtained when the command is run in foreground
+by specifying
+.Fl L .
+.Pp
+With the
 .Fl c
 flag,
 .Nm
