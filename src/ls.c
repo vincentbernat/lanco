@@ -30,36 +30,52 @@ usage(void)
 		__progname);
 	fprintf(stderr, "Version: %s\n", PACKAGE_STRING);
 	fprintf(stderr, "\n");
+	fprintf(stderr, "-l         don't truncate command.\n");
+	fprintf(stderr, "\n");
 	fprintf(stderr, "see manual page lanco(8) for more information\n");
 }
+
+#define MAX_COMMAND_LEN 50
 
 static int
 one_pid(const char *namespace, const char *task, pid_t pid, void *arg)
 {
-	(void)arg;
-	const char *command = utils_cmdline(pid);
+	int *truncate = arg;
+	char *command = utils_cmdline(pid);
+	if (command) command = strdup(command);
+	if (*truncate && strlen(command) > MAX_COMMAND_LEN) {
+		char *ellipsis = "…";
+		size_t ellipsis_len = strlen(ellipsis);
+		strcpy(command + MAX_COMMAND_LEN - ellipsis_len,
+		    ellipsis);
+	}
 	fprintf(stdout, " │  → %5d %s\n", pid, command?command:"?????");
+	free(command);
 	return 0;
 }
 
 static int
 one_task(const char *namespace, const char *task, void *arg)
 {
-	(void)arg;
+	int *truncate = arg;
 	fprintf(stdout, " ├ %s\n", task);
-	return cg_iterate_pids(namespace, task, one_pid, NULL);
+	return cg_iterate_pids(namespace, task, one_pid, truncate);
 }
 
 int
 cmd_ls(const char *namespace, int argc, char * const argv[])
 {
 	int ch;
+	int truncate = 1;
 
-	while ((ch = getopt(argc, argv, "h")) != -1) {
+	while ((ch = getopt(argc, argv, "hl")) != -1) {
 		switch (ch) {
 		case 'h':
 			usage();
 			return 0;
+		case 'l':
+			truncate = 0;
+			break;
 		default:
 			usage();
 			return -1;
@@ -67,7 +83,7 @@ cmd_ls(const char *namespace, int argc, char * const argv[])
 	}
 
 	fprintf(stdout, "%s\n", namespace);
-	if (cg_iterate_tasks(namespace, one_task, NULL) == -1) {
+	if (cg_iterate_tasks(namespace, one_task, &truncate) == -1) {
 		log_warnx("ls", "error while walking tasks");
 		return -1;
 	}

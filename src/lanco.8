@@ -136,8 +136,12 @@ Check if the provided task is already running. The exit status will be
 .Ed
 
 .Cd ls
+.Op Fl l
 .Bd -ragged -offset XX
-Show all tasks running.
+Show all tasks running. By default, the command is truncated to 50
+characters. With
+.Fl l ,
+no truncation occurs.
 .Ed
 
 .Cd top
