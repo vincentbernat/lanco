@@ -204,16 +204,25 @@ curses_global_cpu(WINDOW *win, const char *namespace, int width)
 	memcpy(&ts, &now, sizeof(struct timespec));
 }
 
+#define GAUGE_SIZE 30
 static void
 curses_task(WINDOW *win, struct one_task *task, int width)
 {
+	int x, y;
 	wattron(win, A_BOLD);
 	wprintw(win, " %-10s ", task->name);
 	wattroff(win, A_BOLD);
 	wprintw(win, "%5d proc%s ",
 	    task->nb, (task->nb > 1)?"s":" ");
-	if (task->cpu_usage > 0)
-		curses_gauge(win, task->cpu_percent, width - 30);
+	if (task->cpu_usage > 0) {
+		getyx(win, y, x);
+		if (x > width - GAUGE_SIZE) {
+			wprintw(win, "\n");
+			getyx(win, y, x);
+		}
+		wmove(win, y, width - GAUGE_SIZE - 1); /* May fail */
+		curses_gauge(win, task->cpu_percent, GAUGE_SIZE);
+	}
 	wprintw(win, "\n");
 }
 
