@@ -264,7 +264,7 @@ curses_tasks(const char *namespace, void *arg)
 		status_win = newwin(1, width, 0, 0);
 	else
 		wresize(status_win, 1, width);
-	wclear(status_win);
+	werase(status_win);
 	wmove(status_win, 0, 0);
 	wattron(status_win, COLOR_PAIR(1));
 	wattron(status_win, A_BOLD);
@@ -285,7 +285,7 @@ curses_tasks(const char *namespace, void *arg)
 		    2, 0);
 	else
 		wresize(main_win, (height > 10)?(height - 8):height - 2, width);
-	wclear(main_win);
+	werase(main_win);
 	wmove(main_win, 1, 0);
 
 	curses_global_cpu(main_win, namespace, width);
