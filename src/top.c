@@ -156,6 +156,7 @@ curses_gauge(WINDOW *win, float percent, int width)
 		int size = width - 6 - 2;
 		int nb = percent * size / 100;
 		if (nb > size) nb = size;
+		if (nb < 0) nb = 0;
 		waddch(win, '[' | A_BOLD | COLOR_PAIR(0));
 		size -= nb;
 		while (nb--)
