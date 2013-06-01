@@ -150,6 +150,15 @@ Show all tasks running in a top-like output with consumed CPU and
 number of tasks. Auto-refresh.
 .Ed
 
+.Cd dump
+.Bd -ragged -offset XX
+Dump all known information about a namespace in JSON format. This
+includes the number of tasks, the CPU usage, the number of CPU and for
+each task, the list of processes running in the task and the CPU usage
+of the task. The CPU usage is the number of nanoseconds per CPU spent
+on the task.
+.Ed
+
 .Sh ENVIRONMENT
 It is expected that
 .Nm
