@@ -1,6 +1,10 @@
 lanĉo
 =====
 
+A more complete presentation can be found on this [blog post][].
+
+[blog post]: http://vincent.bernat.im/en/blog/2013-lanco.html
+
 Features
 --------
 
