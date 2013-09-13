@@ -15,7 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "lanco.h"
+#include "lancxo.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -40,13 +40,13 @@ usage(void)
 	fprintf(stderr, "-l logfile log output to the following file.\n");
 	fprintf(stderr, "-c command execute a command when the task exits.\n");
 	fprintf(stderr, "\n");
-	fprintf(stderr, "see manual page lanco(8) for more information\n");
+	fprintf(stderr, "see manual page lancxo(8) for more information\n");
 }
 
 /**
  * Register a command to be run when the task exits. Only one such command can
  * be registered. This is done by creating a file
- * /var/run/lanco-XXXX/task-exit-XXXXX containing the command. The release agent
+ * /var/run/lancxo-XXXX/task-exit-XXXXX containing the command. The release agent
  * will execute it.
  *
  * @param namespace Namespace.
@@ -58,7 +58,7 @@ static int
 register_command(const char *namespace, const char *task, const char *command)
 {
 	char *path = NULL;
-	if (asprintf(&path, RUNPREFIX "/lanco-%s/task-exit-%s",
+	if (asprintf(&path, RUNPREFIX "/lancxo-%s/task-exit-%s",
 		namespace, task) == -1) {
 		log_warn("run", "unable to allocate memory for new command");
 		return -1;
@@ -157,7 +157,7 @@ cmd_run(const char *namespace, int argc, char * const argv[])
 	if (logfile && strlen(logfile)) logfile = strdup(logfile);
 	if (((!logfile && background) ||
 		(logfile && strlen(logfile) == 0)) &&
-	    asprintf(&logfile, LOGPREFIX "/lanco-%s/task-%s.log",
+	    asprintf(&logfile, LOGPREFIX "/lancxo-%s/task-%s.log",
 		namespace, task) == -1) {
 		log_warn("run", "unable to allocate memory for logfile");
 		return -1;

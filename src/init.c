@@ -15,7 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "lanco.h"
+#include "lancxo.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -38,7 +38,7 @@ usage(void)
 	fprintf(stderr, "-u USER   user allowed to use the namespace.\n");
 	fprintf(stderr, "-g GROUP  group allowed to use the namespace.\n");
 	fprintf(stderr, "\n");
-	fprintf(stderr, "see manual page lanco(8) for more information\n");
+	fprintf(stderr, "see manual page lancxo(8) for more information\n");
 }
 
 int

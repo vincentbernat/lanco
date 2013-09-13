@@ -15,7 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "lanco.h"
+#include "lancxo.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -68,7 +68,7 @@ _cg_release_task(const char *root, const char *namespace, const char *task,
     void(*log)(const char *, const char *, ...))
 {
 	char *path = NULL;
-	if (asprintf(&path, "%s/lanco-%s/task-%s",
+	if (asprintf(&path, "%s/lancxo-%s/task-%s",
 		root, namespace, task) == -1) {
 		log("cgroups", "unable to allocate memory to check for task");
 		return -1;
@@ -116,7 +116,7 @@ _cg_create_task(const char *root, const char *namespace, const char *task,
 	int rc = -1;
 	char *path = NULL;
 	char *tasks = NULL;
-	if (asprintf(&path, "%s/lanco-%s/task-%s",
+	if (asprintf(&path, "%s/lancxo-%s/task-%s",
 		root, namespace, task) == -1 ||
 	    asprintf(&tasks, "%s/tasks", path) == -1) {
 		log("cgroups", "unable to allocate memory to check for task");
@@ -185,7 +185,7 @@ int
 cg_exist_task(const char *namespace, const char *task, ino_t *inode)
 {
 	char *path = NULL;
-	if (asprintf(&path, "%s/lanco-%s/task-%s",
+	if (asprintf(&path, "%s/lancxo-%s/task-%s",
 		CGROOT, namespace, task) == -1) {
 		log_warn("cgroups", "unable to allocate memory to check for task");
 		return 0;
@@ -241,7 +241,7 @@ cg_kill_task(const char *namespace, const char *task, ino_t inode, int signal)
 	TAILQ_HEAD(, one_pid) pids;
 	TAILQ_INIT(&pids);
 
-	if (asprintf(&dirpath, "%s/lanco-%s/task-%s",
+	if (asprintf(&dirpath, "%s/lancxo-%s/task-%s",
 		CGROOT, namespace, task) == -1 ||
 	    asprintf(&taskspath, "%s/tasks", dirpath) == -1) {
 		log_warn("cgroups", "unable to allocate memory to check for task");
@@ -368,7 +368,7 @@ cg_iterate_tasks(const char *namespace,
 	int rc = -1;
 	char *path = NULL;
 	DIR *dir = NULL;
-	if (asprintf(&path, "%s/lanco-%s", CGROOT, namespace) == -1) {
+	if (asprintf(&path, "%s/lancxo-%s", CGROOT, namespace) == -1) {
 		log_warn("cgroups", "unable to allocate memory for tasks iteration");
 		goto end;
 	}
@@ -414,7 +414,7 @@ cg_iterate_pids(const char *namespace, const char *task,
 	TAILQ_HEAD(, one_pid) pids;
 	TAILQ_INIT(&pids);
 
-	if (asprintf(&path, "%s/lanco-%s/task-%s/tasks",
+	if (asprintf(&path, "%s/lancxo-%s/task-%s/tasks",
 		CGROOT, namespace, task) == -1) {
 		log_warn("cgroups", "unable to allocate memory for tasks iteration");
 		goto end;
@@ -466,7 +466,7 @@ int
 cg_exist_named_hierarchy(const char *namespace)
 {
 	char *path = NULL;
-	if (asprintf(&path, "%s/lanco-%s", CGROOT, namespace) == -1) {
+	if (asprintf(&path, "%s/lancxo-%s", CGROOT, namespace) == -1) {
 		log_warn("cgroups", "unable to allocate memory for named cgroup");
 		return 0;
 	}
@@ -492,7 +492,7 @@ static int
 cg_delete_release_agent(const char *namespace)
 {
 	char *command = NULL;
-	if (asprintf(&command, RUNPREFIX "/lanco-%s/lanco-release-agent@@%s@@release",
+	if (asprintf(&command, RUNPREFIX "/lancxo-%s/lancxo-release-agent@@%s@@release",
 		namespace, namespace) == -1) {
 		log_warn("cgroups", "unable to allocate memory for release agent");
 		return -1;
@@ -512,7 +512,7 @@ static int
 cg_delete_named_hierarchy(const char *name)
 {
 	char *path = NULL;
-	if (asprintf(&path, "%s/lanco-%s", CGROOT, name) == -1) {
+	if (asprintf(&path, "%s/lancxo-%s", CGROOT, name) == -1) {
 		log_warn("cgroups", "unable to allocate memory for named cgroup");
 		free(path);
 		return -1;
@@ -543,7 +543,7 @@ static int
 cg_delete_cpuacct_hierarchy(const char *name)
 {
 	char *path = NULL;
-	if (asprintf(&path, "%s/lanco-%s", CGCPUACCT, name) == -1) {
+	if (asprintf(&path, "%s/lancxo-%s", CGCPUACCT, name) == -1) {
 		log_warn("cgroups", "unable to allocate memory for cpuact cgroup");
 		free(path);
 		return -1;
@@ -589,7 +589,7 @@ cg_get_property(const char *controller, const char *namespace,
     const char *task, const char *property)
 {
 	char *path = NULL;
-	if (asprintf(&path, "%s/%s/lanco-%s/%s%s/%s", CGROOT, controller?controller:"",
+	if (asprintf(&path, "%s/%s/lancxo-%s/%s%s/%s", CGROOT, controller?controller:"",
 		namespace, task?"task-":"", task?task:"", property) == -1) {
 		log_warn("cgroups", "unable to allocate memory to get property");
 		return NULL;
@@ -688,7 +688,7 @@ cg_set_property(const char *path, const char *property, const char*value)
  * Setup release agent for a named hierarchy.
  *
  * Release agent needs to be an executable. It is not possible to provide static
- * arguments. Therefore, we will setup a link to lanco with some special name
+ * arguments. Therefore, we will setup a link to lancxo with some special name
  * containing the whole command.
  *
  * @param name Name of the hierarchy
@@ -709,7 +709,7 @@ cg_set_release_agent(const char *name, const char *path)
 	}
 
 	char *command = NULL;
-	if (asprintf(&command, RUNPREFIX "/lanco-%s/lanco-release-agent@@%s@@release",
+	if (asprintf(&command, RUNPREFIX "/lancxo-%s/lancxo-release-agent@@%s@@release",
 		name, name) == -1) {
 		log_warn("cgroups", "unable to allocate memory for release agent");
 		return -1;
@@ -767,40 +767,40 @@ cg_setup_named_hierarchy(const char *name, uid_t uid, gid_t gid)
 {
 	char *path = NULL;
 	char *options = NULL;
-	if (asprintf(&path, "%s/lanco-%s", CGROOT, name) == -1 ||
-	    asprintf(&options, "none,name=lanco-%s", name) == -1) {
+	if (asprintf(&path, "%s/lancxo-%s", CGROOT, name) == -1 ||
+	    asprintf(&options, "none,name=lancxo-%s", name) == -1) {
 		log_warn("cgroups", "unable to allocate memory for named cgroup");
 		free(path);
 		return -1;
 	}
 
-	log_debug("cgroups", "check if cgroup lanco-%s already exists", name);
+	log_debug("cgroups", "check if cgroup lancxo-%s already exists", name);
 	if (utils_is_mount_point(path, CGROOT)) {
 		free(options);
 
 		struct stat a;
 		if (stat(path, &a) == -1) {
 			log_warn("cgroups",
-			    "cgroup lanco-%s exists but unable to check it", name);
+			    "cgroup lancxo-%s exists but unable to check it", name);
 			free(path);
 			return -1;
 		}
 		if ((a.st_uid != (uid == -1)?geteuid():uid) ||
 		    (a.st_gid != (gid == -1)?getegid():gid)) {
 			log_warnx("cgroups",
-			    "cgroup lanco-%s already exists but wrong permissions",
+			    "cgroup lancxo-%s already exists but wrong permissions",
 			    name);
 			free(path);
 			return -1;
 		}
-		log_debug("cgroups", "cgroup lanco-%s already setup", name);
+		log_debug("cgroups", "cgroup lancxo-%s already setup", name);
 		free(path);
 		return 0;
 	}
 
-	log_debug("cgroups", "mount cgroup lanco-%s", name);
+	log_debug("cgroups", "mount cgroup lancxo-%s", name);
 	if (mkdir(path, 0755) == -1) {
-		log_warn("cgroups", "unable to create named cgroup lanco-%s",
+		log_warn("cgroups", "unable to create named cgroup lancxo-%s",
 		    name);
 		free(path);
 		free(options);
@@ -812,7 +812,7 @@ cg_setup_named_hierarchy(const char *name, uid_t uid, gid_t gid)
 		MS_NODEV | MS_NOSUID |
 		MS_NOEXEC | MS_RELATIME,
 		options) == -1) {
-		log_warn("cgroups", "unable to mount named cgroup lanco-%s",
+		log_warn("cgroups", "unable to mount named cgroup lancxo-%s",
 		    name);
 		rmdir(path);
 		free(path);
@@ -823,7 +823,7 @@ cg_setup_named_hierarchy(const char *name, uid_t uid, gid_t gid)
 
 	/* Set permissions */
 	if (cg_fix_permissions(path, uid, gid) == -1) {
-		log_warn("cgroups", "unable to assign new cgroup lanco-%s to "
+		log_warn("cgroups", "unable to assign new cgroup lancxo-%s to "
 		    "uid:gid %d:%d", name, uid, gid);
 		cg_delete_named_hierarchy(name);
 		free(path);
@@ -833,7 +833,7 @@ cg_setup_named_hierarchy(const char *name, uid_t uid, gid_t gid)
 	if (cg_set_property(path, "notify_on_release", "1") == -1 ||
 	    cg_set_property(path, "cgroup.clone_children", "1") == -1 ||
 	    cg_set_release_agent(name, path) == -1) {
-		log_warnx("cgroups", "unable to setup new cgroup lanco-%s", name);
+		log_warnx("cgroups", "unable to setup new cgroup lancxo-%s", name);
 		cg_delete_named_hierarchy(name);
 		free(path);
 		return -1;
@@ -856,38 +856,38 @@ static int
 cg_setup_cpuacct_hierarchy(const char *name, uid_t uid, gid_t gid)
 {
 	char *path = NULL;
-	if (asprintf(&path, "%s/lanco-%s", CGCPUACCT, name) == -1) {
+	if (asprintf(&path, "%s/lancxo-%s", CGCPUACCT, name) == -1) {
 		log_warn("cgroups", "unable to allocate memory for cpuacct cgroup");
 		free(path);
 		return -1;
 	}
 
-	log_debug("cgroups", "check if cpuacct cgroup lanco-%s already exists", name);
+	log_debug("cgroups", "check if cpuacct cgroup lancxo-%s already exists", name);
 	struct stat a;
 	if (stat(path, &a) == 0 && S_ISDIR(a.st_mode)) {
 		if ((a.st_uid != (uid == -1)?geteuid():uid) ||
 		    (a.st_gid != (gid == -1)?getegid():gid)) {
 			log_warnx("cgroups",
-			    "cpuacct cgroup lanco-%s already exists but wrong permissions",
+			    "cpuacct cgroup lancxo-%s already exists but wrong permissions",
 			    name);
 			free(path);
 			return -1;
 		}
-		log_debug("cgroups", "cgroup lanco-%s already setup", name);
+		log_debug("cgroups", "cgroup lancxo-%s already setup", name);
 		free(path);
 		return 0;
 	}
 
-	log_debug("cgroups", "create cpuacct cgroup lanco-%s", name);
+	log_debug("cgroups", "create cpuacct cgroup lancxo-%s", name);
 	if (mkdir(path, 0755) == -1) {
-		log_warn("cgroups", "unable to create cpuacct cgroup lanco-%s",
+		log_warn("cgroups", "unable to create cpuacct cgroup lancxo-%s",
 		    name);
 		free(path);
 		return -1;
 	}
 
 	if (cg_fix_permissions(path, uid, gid) == -1) {
-		log_warn("cgroups", "unable to assign new cpuacct cgroup lanco-%s to "
+		log_warn("cgroups", "unable to assign new cpuacct cgroup lancxo-%s to "
 		    "uid:gid %d:%d", name, uid, gid);
 		if (rmdir(path) == -1)
 			log_warn("cgroups",

@@ -15,7 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "lanco.h"
+#include "lancxo.h"
 
 #include <getopt.h>
 #include <string.h>
@@ -32,14 +32,14 @@ usage(void)
 		__progname);
 	fprintf(stderr, "Version: %s\n", PACKAGE_STRING);
 	fprintf(stderr, "\n");
-	fprintf(stderr, "see manual page lanco(8) for more information\n");
+	fprintf(stderr, "see manual page lancxo(8) for more information\n");
 }
 
 static void
 execute_hook(const char *namespace, const char *task)
 {
 	char *path = NULL;
-	if (asprintf(&path, RUNPREFIX "/lanco-%s/task-exit-%s",
+	if (asprintf(&path, RUNPREFIX "/lancxo-%s/task-exit-%s",
 		namespace, task) == -1) {
 		log_warn("release", "unable to allocate memory for executing hook");
 		return;
