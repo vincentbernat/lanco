@@ -26,3 +26,9 @@ Usage
 -----
 
 The usage is described in the `lanco.8` manual page.
+
+Name
+----
+
+lanĉo means "launcher" in Esperanto. It should have been spelled
+"lancxo" without the diacritic but I have learned about it too late.
