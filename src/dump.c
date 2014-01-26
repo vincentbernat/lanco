@@ -19,6 +19,7 @@
 
 #include <getopt.h>
 #include <unistd.h>
+#include <time.h>
 #include <jansson.h>
 
 extern const char *__progname;
@@ -110,6 +111,12 @@ cmd_dump(const char *namespace, int argc, char * const argv[])
 	if (nbcpus > 0)
 		json_object_set_new(result, "nbcpus",
 		    json_integer(nbcpus));
+
+	struct timespec tspec;
+	if (clock_gettime(CLOCK_MONOTONIC, &tspec) == 0)
+		json_object_set_new(result, "timestamp",
+		    json_integer(tspec.tv_sec * 1000 +
+			tspec.tv_nsec / (1000*1000)));
 
 	json_dumpf(result, stdout, JSON_INDENT(1));
 
