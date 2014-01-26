@@ -70,7 +70,7 @@ cmd_init(const char *namespace, int argc, char * const argv[])
 	if (user) {
 		struct passwd *pw = getpwnam(user);
 		if (pw == NULL) {
-			log_warn("init", "unable to find user %s", user);
+			log_warnx("init", "unable to find user %s", user);
 			return -1;
 		}
 		uid = pw->pw_uid;
@@ -80,7 +80,7 @@ cmd_init(const char *namespace, int argc, char * const argv[])
 	if (group) {
 		struct group *gr = getgrnam(group);
 		if (gr == NULL) {
-			log_warn("init", "unable to find gropup %s", group);
+			log_warnx("init", "unable to find group %s", group);
 			return -1;
 		}
 		gid = gr->gr_gid;
