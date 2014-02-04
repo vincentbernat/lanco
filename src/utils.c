@@ -15,7 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "lanco.h"
+#include "lancxo.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -146,14 +146,14 @@ utils_is_valid_name(const char *name)
  * @param namespace Namespace
  * @return 0 if success or -1 otherwise
  *
- * The directory is prefix + "/lanco-" + namespace
+ * The directory is prefix + "/lancxo-" + namespace
  */
 int
 utils_create_subdirectory(const char *prefix, const char *namespace,
     uid_t uid, gid_t gid)
 {
 	char *dir = NULL;
-	if (asprintf(&dir, "%s/lanco-%s", prefix, namespace) == -1) {
+	if (asprintf(&dir, "%s/lancxo-%s", prefix, namespace) == -1) {
 		log_warn("utils", "unable to format directory for %s",
 		    namespace);
 		return -1;

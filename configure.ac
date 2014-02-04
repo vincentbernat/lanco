@@ -1,6 +1,6 @@
 #                                               -*- Autoconf -*-
 AC_PREREQ([2.64])
-AC_INIT([lanco],
+AC_INIT([lancxo],
         [m4_esyscmd_s([git describe --tags --always 2> /dev/null || date +%F])],
         [bernat@luffy.cx])
 AC_CONFIG_SRCDIR([src/log.c])

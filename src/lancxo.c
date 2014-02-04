@@ -15,7 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "lanco.h"
+#include "lancxo.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -34,14 +34,14 @@ usage(void)
 	fprintf(stderr, "\n");
 	fprintf(stderr, "-d      Be more verbose.\n");
 	fprintf(stderr, "\n");
-	fprintf(stderr, "see manual page lanco(8) for more information\n");
+	fprintf(stderr, "see manual page lancxo(8) for more information\n");
 }
 
 struct cmd {
 	const char *name;
 	int(*fn)(const char *, int argc, char * const *argv);
 };
-static struct cmd lanco_cmds[] = {
+static struct cmd lancxo_cmds[] = {
 	{ "init",    cmd_init },
 	{ "run",     cmd_run  },
 	{ "start",   cmd_run  },
@@ -58,12 +58,12 @@ static struct cmd lanco_cmds[] = {
 /**
  * Expand argv[0] into arguments.
  *
- * lanco can be called with "lanco" but also with embedded arguments,
+ * lancxo can be called with "lancxo" but also with embedded arguments,
  * like this:
  *
  * @verbatim
- * lanco@@namespace@@init
- * lanco@@namespace@@run@@task@@sleep 10
+ * lancxo@@namespace@@init
+ * lancxo@@namespace@@run@@task@@sleep 10
  * @endverbatim
  *
  * We expand this here. Other arguments are pushed away.
@@ -168,7 +168,7 @@ main(int argc, char * const argv[])
 	argv = &argv[optind];
 	optind = 1;
 
-	for (struct cmd *cmd = lanco_cmds; cmd->name; cmd++)
+	for (struct cmd *cmd = lancxo_cmds; cmd->name; cmd++)
 		if (!strcmp(cmd->name, command))
 			return (cmd->fn(namespace,
 				argc - optind,

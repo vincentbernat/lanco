@@ -13,10 +13,10 @@
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
 .Dd $Mdocdate: February 05 2013 $
-.Dt LANCO 8
+.Dt LANCXO 8
 .Os
 .Sh NAME
-.Nm lanco
+.Nm lancxo
 .Nd task launcher
 .Sh SYNOPSIS
 .Nm
@@ -86,7 +86,7 @@ the standard input will be closed, the standard output and the
 standard error are redirected to a file
 .Ar logfile
 or to
-.Pa /var/log/lanco-XXXXX/YYYYY.log
+.Pa /var/log/lancxo-XXXXX/YYYYY.log
 where the first pattern is the namespace and the second is the task
 name. If the log file already exists, it will be rotated. This
 behaviour can also be obtained when the command is run in foreground
@@ -200,13 +200,13 @@ the same hierarchy may enable subsystems that need user input to be
 functional, like cpuset.
 
 .Sh FILES
-.Bl -tag -width "/sys/fs/cgroup/lanco-XXXXX" -compact
-.It /sys/fs/cgroup/lanco-XXXXX
+.Bl -tag -width "/sys/fs/cgroup/lancxo-XXXXX" -compact
+.It /sys/fs/cgroup/lancxo-XXXXX
 Named cgroup for a given namespace.
-.It /var/log/lanco-XXXXX/YYYYYYY.log
+.It /var/log/lancxo-XXXXX/YYYYYYY.log
 Log file for a given task in a given namespace. Those files are
 automatically rotated.
-.It /var/run/lanco-XXXXX/@release-agent
+.It /var/run/lancxo-XXXXX/@release-agent
 Symbolic link to
 .Nm
 to act as a release agent for cgroups.

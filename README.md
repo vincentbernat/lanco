@@ -8,7 +8,7 @@ A more complete presentation can be found on this [blog post][].
 Features
 --------
 
-`lanco` is a task launcher which does not want to be an init program.
+`lancxo` is a task launcher which does not want to be an init program.
 
  - No daemon.
  - Run each task in a dedicated cgroup.
@@ -25,10 +25,9 @@ the tasks in the cgroup.
 Usage
 -----
 
-The usage is described in the `lanco.8` manual page.
+The usage is described in the `lancxo.8` manual page.
 
 Name
 ----
 
-lanĉo means "launcher" in Esperanto. It should have been spelled
-"lancxo" without the diacritic but I have learned about it too late.
+lanĉo means "launcher" in Esperanto.
