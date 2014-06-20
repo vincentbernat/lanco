@@ -534,17 +534,19 @@ cg_delete_named_hierarchy(const char *name)
 }
 
 /**
- * Delete cpuacct hierarchy. It should be empty.
+ * Delete subsystem hierarchy. It should be empty.
  *
+ * @param subsystem Path to subsystem.
  * @param name Name of the hierarchy.
  * @return 0 on success and -1 on error
  */
 static int
-cg_delete_cpuacct_hierarchy(const char *name)
+cg_delete_subsystem_hierarchy(const char *subsystem, const char *name)
 {
 	char *path = NULL;
-	if (asprintf(&path, "%s/lanco-%s", CGCPUACCT, name) == -1) {
-		log_warn("cgroups", "unable to allocate memory for cpuact cgroup");
+	if (asprintf(&path, "%s/lanco-%s", subsystem, name) == -1) {
+		log_warn("cgroups", "unable to allocate memory for cgroup in %s",
+			subsystem);
 		free(path);
 		return -1;
 	}
@@ -569,7 +571,7 @@ cg_delete_hierarchies(const char *name)
 {
 	if (cg_delete_named_hierarchy(name) == -1)
 		return -1;
-	cg_delete_cpuacct_hierarchy(name);
+	cg_delete_subsystem_hierarchy(CGCPUACCT, name);
 	cg_delete_release_agent(name);
 	return 0;
 }
@@ -844,8 +846,9 @@ cg_setup_named_hierarchy(const char *name, uid_t uid, gid_t gid)
 }
 
 /**
- * Create and attach a cpuacct hierarchy.
+ * Create and attach a subsystem hierarchy.
  *
+ * @param subsystem Path to subsystem
  * @param name Name of the hierarchy.
  * @param uid UID of the user owning the hierarchy.
  * @param gid GID of the group owning the hierarchy.
@@ -853,23 +856,25 @@ cg_setup_named_hierarchy(const char *name, uid_t uid, gid_t gid)
  * @return 0 on success, -1 on error.
  */
 static int
-cg_setup_cpuacct_hierarchy(const char *name, uid_t uid, gid_t gid)
+cg_setup_subsystem_hierarchy(const char *subsystem,
+    const char *name, uid_t uid, gid_t gid)
 {
 	char *path = NULL;
-	if (asprintf(&path, "%s/lanco-%s", CGCPUACCT, name) == -1) {
-		log_warn("cgroups", "unable to allocate memory for cpuacct cgroup");
+	if (asprintf(&path, "%s/lanco-%s", subsystem, name) == -1) {
+		log_warn("cgroups", "unable to allocate memory for new subsystem cgroup");
 		free(path);
 		return -1;
 	}
 
-	log_debug("cgroups", "check if cpuacct cgroup lanco-%s already exists", name);
+	log_debug("cgroups", "check if cgroup lanco-%s already exists in %s",
+	    name, subsystem);
 	struct stat a;
 	if (stat(path, &a) == 0 && S_ISDIR(a.st_mode)) {
 		if ((a.st_uid != (uid == -1)?geteuid():uid) ||
 		    (a.st_gid != (gid == -1)?getegid():gid)) {
 			log_warnx("cgroups",
-			    "cpuacct cgroup lanco-%s already exists but wrong permissions",
-			    name);
+			    "cgroup lanco-%s already exists for %s but wrong permissions",
+			    name, subsystem);
 			free(path);
 			return -1;
 		}
@@ -878,17 +883,18 @@ cg_setup_cpuacct_hierarchy(const char *name, uid_t uid, gid_t gid)
 		return 0;
 	}
 
-	log_debug("cgroups", "create cpuacct cgroup lanco-%s", name);
+	log_debug("cgroups", "create cgroup lanco-%s in %s",
+	    name, subsystem);
 	if (mkdir(path, 0755) == -1) {
-		log_warn("cgroups", "unable to create cpuacct cgroup lanco-%s",
-		    name);
+		log_warn("cgroups", "unable to create cgroup lanco-%s in %s",
+		    name, subsystem);
 		free(path);
 		return -1;
 	}
 
 	if (cg_fix_permissions(path, uid, gid) == -1) {
-		log_warn("cgroups", "unable to assign new cpuacct cgroup lanco-%s to "
-		    "uid:gid %d:%d", name, uid, gid);
+		log_warn("cgroups", "unable to assign new cgroup lanco-%s to "
+		    "uid:gid %d:%d in %s", name, uid, gid, subsystem);
 		if (rmdir(path) == -1)
 			log_warn("cgroups",
 			    "additionally, not able to remove directory for cgroup");
@@ -901,10 +907,66 @@ cg_setup_cpuacct_hierarchy(const char *name, uid_t uid, gid_t gid)
 }
 
 /**
+ * Setup an optional subsystem.
+ *
+ * @param name Name of the subsystem.
+ * @param path Expected path.
+ * @param altpath Possible alternative path (may be NULL).
+ * @param namespace Named hierarchy to create.
+ * @param uid UID of the user owning the named hierarchy.
+ * @param gid GID of the group owning the named hierarchy.
+ *
+ * If the subsystem is present at the alternative path, a symlink will be
+ * created. If the subsystem is not present anywhere, it is created at the
+ * expected path and symlinked to the alternative path.
+ *
+ * Use -1 for UID or GID to not change the owner.
+ *
+ * @return 0 on success, -1 otherwise
+ */
+static void
+cg_setup_optional_hierarchy(const char *name,
+    const char *path, const char *altpath,
+    const char *namespace, uid_t uid, gid_t gid)
+{
+	if (!utils_is_mount_point(path, CGROOT) &&
+	    (!altpath || !utils_is_mount_point(altpath, CGROOT))) {
+		log_debug("cgroups", "initializing %s subsystem", name);
+		if (mkdir(path, 0755) == -1) {
+			log_warn("cgroups",
+			    "unable to create %s directory", name);
+			return;
+		}
+		if (mount("cgroup", path,
+			"cgroup",
+			MS_NODEV | MS_NOSUID |
+			MS_NOEXEC | MS_RELATIME,
+			name) == -1) {
+			log_warn("cgroups",
+			    "unable to mount %s hierarchy", name);
+			rmdir(path);
+			return;
+		}
+	} else log_debug("cgroups", "%s hierarchy is already here", name);
+	if (altpath && !utils_is_mount_point(altpath, CGROOT)) {
+		log_debug("cgroups", "symlink %s to %s", altpath, path);
+		if (symlink(path, altpath) == -1) {
+			log_warn("cgroups",
+			    "unable to create symlink for %s hierarchy", name);
+			return;
+		}
+	}
+
+	/* Create a subdirectory in it. */
+	if (cg_setup_subsystem_hierarchy(path, namespace, uid, gid) == -1)
+		return;
+}
+
+/**
  * Setup cgroups hierarchy.
  *
- * A named hierarchy is created and the cpuacct subsystem is initialized.  Not
- * being able to grab cpuacct subsystem is not considered an error.
+ * A named hierarchy is created and the optional subsystems are initialized.  Not
+ * being able to grab those subsystems is not considered an error.
  *
  * @param namespace Named hierarchy to create.
  * @param uid UID of the user owning the named hierarchy.
@@ -940,37 +1002,9 @@ cg_setup_hierarchies(const char *namespace, uid_t uid, gid_t gid)
 	if (cg_setup_named_hierarchy(namespace, uid, gid) == -1)
 		return -1;
 
-	/* Try to mount cpuacct */
-	if (!utils_is_mount_point(CGCPUACCT, CGROOT)) {
-		if (!utils_is_mount_point(CGCPUCPUACCT, CGROOT)) {
-			log_debug("cgroups", "initializing cpu,cpuacct subsystem");
-			if (mkdir(CGCPUCPUACCT, 0755) == -1) {
-				log_warn("cgroups",
-				    "unable to create cpu,cpuacct directory");
-				return 0;
-			}
-			if (mount("cgroup", CGCPUCPUACCT,
-				"cgroup",
-				MS_NODEV | MS_NOSUID |
-				MS_NOEXEC | MS_RELATIME,
-				"cpu,cpuacct") == -1) {
-				log_warn("cgroups",
-				    "unable to mount cpu,cpuacct hierarchy");
-				rmdir(CGCPUCPUACCT);
-				return 0;
-			}
-		}
-		log_debug("cgroups", "symlink " CGCPUCPUACCT " to " CGCPUACCT);
-		if (symlink(CGCPUCPUACCT, CGCPUACCT) == -1) {
-			log_warn("cgroups",
-			    "unable to create symlink for cpuacct hierarchy");
-			return 0;
-		}
-	} else log_debug("cgroups", CGCPUACCT " hierarchy is already here");
-
-	/* Create a subdirectory in it. */
-	if (cg_setup_cpuacct_hierarchy(namespace, uid, gid) == -1)
-		return -1;
+	cg_setup_optional_hierarchy("cpu,cpuacct",
+	    CGCPUCPUACCT, CGCPUACCT,
+	    namespace, uid, gid);
 
 	return 0;
 }
