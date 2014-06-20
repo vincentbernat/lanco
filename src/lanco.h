@@ -48,6 +48,7 @@ int cmd_dump   (const char *, int, char * const *);
 #define CGROOT CGROOTPARENT "/cgroup"
 #define CGCPUACCT CGROOT "/cpuacct"
 #define CGCPUCPUACCT CGROOT "/cpu,cpuacct"
+#define CGMEMORY CGROOT "/memory"
 int cg_setup_hierarchies(const char *, uid_t, gid_t);
 int cg_delete_hierarchies(const char*);
 int cg_exist_named_hierarchy(const char*);
@@ -62,6 +63,7 @@ int cg_iterate_pids(const char *, const char *,
     int(*visit)(const char *, const char *, pid_t, void*),
     void *);
 uint64_t cg_cpu_usage(const char*, const char*);
+uint64_t cg_memory_usage(const char*, const char*);
 
 /* utils.c */
 int utils_is_mount_point(const char *, const char *);

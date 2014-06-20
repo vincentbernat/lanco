@@ -91,6 +91,10 @@ _cg_release_task(const char *root, const char *namespace, const char *task,
 int
 cg_release_task(const char *namespace, const char *task)
 {
+	if (_cg_release_task(CGMEMORY, namespace, task, log_debug) == -1) {
+		log_debug("cgroups", "unable to release task to a memory cgroup");
+		log_debug("cgroups", "no future memory accounting for task %s", task);
+	}
 	if (_cg_release_task(CGCPUACCT, namespace, task, log_debug) == -1) {
 		log_info("cgroups", "unable to release task to a cpuacct cgroup");
 		log_info("cgroups", "no future CPU accounting for task %s", task);
@@ -168,6 +172,10 @@ cg_create_task(const char *namespace, const char *task)
 	if (_cg_create_task(CGCPUACCT, namespace, task, log_debug) == -1) {
 		log_info("cgroups", "unable to assign task to a cpuacct cgroup");
 		log_info("cgroups", "no CPU accounting for task %s", task);
+	}
+	if (_cg_create_task(CGMEMORY, namespace, task, log_debug) == -1) {
+		log_debug("cgroups", "unable to assign task to a memory cgroup");
+		log_debug("cgroups", "no memory accounting for task %s", task);
 	}
 	return 0;
 }
@@ -561,7 +569,7 @@ cg_delete_subsystem_hierarchy(const char *subsystem, const char *name)
 }
 
 /**
- * Delete named and cpuacct hierarchy. They should be empty.
+ * Delete named and subsystem hierarchies. They should be empty.
  *
  * @param name Name of the hierarchy.
  * @return 0 on success and -1 on error
@@ -572,6 +580,7 @@ cg_delete_hierarchies(const char *name)
 	if (cg_delete_named_hierarchy(name) == -1)
 		return -1;
 	cg_delete_subsystem_hierarchy(CGCPUACCT, name);
+	cg_delete_subsystem_hierarchy(CGMEMORY, name);
 	cg_delete_release_agent(name);
 	return 0;
 }
@@ -641,6 +650,31 @@ cg_cpu_usage(const char *namespace, const char *task)
 	long long unsigned usage = strtoll(usagestr, &end, 10);
 	if (*end != '\0') {
 		log_warnx("cgroups", "unable to parse CPU usage");
+		free(usagestr);
+		return 0;
+	}
+	free(usagestr);
+	return (usage > 0)?usage:1;
+}
+
+/**
+ * Get memory usage for a whole namespace or just a task.
+ *
+ * @param namespace  Namespace to process
+ * @param task       Task name or NULL if not task
+ * @return memory usage or 0 if not available
+ */
+uint64_t
+cg_memory_usage(const char *namespace, const char *task)
+{
+	char *usagestr = cg_get_property("memory", namespace, task,
+	    "memory.usage_in_bytes");
+	if (usagestr == NULL) return 0; /* Not available */
+
+	char *end;
+	long long unsigned usage = strtoll(usagestr, &end, 10);
+	if (*end != '\0') {
+		log_warnx("cgroups", "unable to parse memory usage");
 		free(usagestr);
 		return 0;
 	}
@@ -1004,6 +1038,9 @@ cg_setup_hierarchies(const char *namespace, uid_t uid, gid_t gid)
 
 	cg_setup_optional_hierarchy("cpu,cpuacct",
 	    CGCPUCPUACCT, CGCPUACCT,
+	    namespace, uid, gid);
+	cg_setup_optional_hierarchy("memory",
+	    CGMEMORY, NULL,
 	    namespace, uid, gid);
 
 	return 0;

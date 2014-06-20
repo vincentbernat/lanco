@@ -67,6 +67,9 @@ one_task(const char *namespace, const char *name, void *arg)
 	uint64_t cpu = cg_cpu_usage(namespace, name);
 	if (cpu)
 		json_object_set_new(result, "cpu", json_integer(cpu));
+	uint64_t memory = cg_memory_usage(namespace, name);
+	if (memory)
+		json_object_set_new(result, "memory", json_integer(memory));
 
 	if (json_object_set_new(tasks, name, result) == -1) {
 		log_warnx("dump", "unable to record task %s", name);
