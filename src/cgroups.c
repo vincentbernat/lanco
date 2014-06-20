@@ -693,7 +693,7 @@ cg_memory_usage(const char *namespace, const char *task)
  * This is really `echo value > path/property`.
  */
 static int
-cg_set_property(const char *path, const char *property, const char*value)
+cg_set_property(const char *path, const char *property, const char *value)
 {
 	log_debug("cgroups", "setting property %s=%s in %s",
 	    property, value, path);
@@ -718,6 +718,37 @@ cg_set_property(const char *path, const char *property, const char*value)
 	free(fpath);
 	fclose(fproperty);
 	return 0;
+}
+
+/**
+ * Set memory limit for a whole namespace or just a task.
+ *
+ * @param namespace Namespace to process
+ * @param task      Task name or NULL if not task
+ * @param limit     Limit to set
+ * @return 0 on success and -1 on error
+ */
+int
+cg_memory_limit(const char *namespace, const char *task,
+    long long unsigned limit)
+{
+	char *strvalue = NULL;
+	if (asprintf(&strvalue, "%llu", limit) == -1) {
+		log_warn("cgroups", "unable to allocate memory for memory limit");
+		return -1;
+	}
+	char *path = NULL;
+	if (asprintf(&path, "%s/lanco-%s/%s%s", CGMEMORY,
+		namespace, task?"task-":"", task?task:"") == -1) {
+		log_warn("cgroups", "unable to allocate memory to set property");
+		free(strvalue);
+		return -1;
+	}
+
+	int ret = cg_set_property(path, "memory.limit_in_bytes", strvalue);
+	free(strvalue);
+	free(path);
+	return ret;
 }
 
 /**

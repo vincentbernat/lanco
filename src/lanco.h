@@ -64,6 +64,7 @@ int cg_iterate_pids(const char *, const char *,
     void *);
 uint64_t cg_cpu_usage(const char*, const char*);
 uint64_t cg_memory_usage(const char*, const char*);
+int cg_memory_limit(const char*, const char*, long long unsigned);
 
 /* utils.c */
 int utils_is_mount_point(const char *, const char *);

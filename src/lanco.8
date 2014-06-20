@@ -74,6 +74,7 @@ commands without special privileges.
 .Op Fl L
 .Op Fl l Ar logfile
 .Op Fl c Ar command
+.Op Fl m Ar limit
 .Ar taskname
 .Ar command
 .Bd -ragged -offset XX
@@ -100,6 +101,14 @@ flag,
 will run the provided command when the task exits. This allows one to
 be notified of the task completion. The command is run by
 .Pa /bin/sh .
+.Pp
+On systems where memory cgroup is available, it is possible to limit
+the memory usage of a task by using the
+.Fl m
+flag. The limit should be set in bytes. On most kernels, memory cgroup
+can be enabled by passing
+.Cm cgroup_enable=memory
+to the kernel.
 .Ed
 
 .Cd stop

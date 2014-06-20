@@ -90,10 +90,12 @@ cmd_run(const char *namespace, int argc, char * const argv[])
 {
 	int ch;
 	int background = 1;
+	long long unsigned memory = 0;
 	char *logfile = NULL;
 	char *command = NULL;
+	char *end;
 
-	while ((ch = getopt(argc, argv, "hLl:fc:")) != -1) {
+	while ((ch = getopt(argc, argv, "hLl:fc:m:")) != -1) {
 		switch (ch) {
 		case 'h':
 			usage();
@@ -109,6 +111,13 @@ cmd_run(const char *namespace, int argc, char * const argv[])
 			break;
 		case 'c':
 			command = optarg;
+			break;
+		case 'm':
+			memory = strtoll(optarg, &end, 10);
+			if (*end != '\0') {
+				usage();
+				return -1;
+			}
 			break;
 		default:
 			usage();
@@ -145,6 +154,10 @@ cmd_run(const char *namespace, int argc, char * const argv[])
 	log_debug("run", "creating sub-cgroup for task %s", task);
 	if (cg_create_task(namespace, task)) {
 		log_warnx("run", "unable to create sub-cgroup for task %s", task);
+		return -1;
+	}
+	if (memory > 0 && cg_memory_limit(namespace, task, memory)) {
+		log_warnx("run", "unable to set memory limit for task %s", task);
 		return -1;
 	}
 
