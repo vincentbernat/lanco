@@ -3,7 +3,7 @@ lanĉo
 
 A more complete presentation can be found on this [blog post][].
 
-[blog post]: http://vincent.bernat.im/en/blog/2013-lanco.html
+[blog post]: https://vincent.bernat.ch/en/blog/2013-lanco
 
 Features
 --------
