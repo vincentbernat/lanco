@@ -1,6 +1,10 @@
 lanĉo
 =====
 
+*Warning*: currently, `lanco` only works with cgroups v1. It could be
+adapted for cgroups v2 but I don't use it anymore and nobody asked
+about it either.
+
 A more complete presentation can be found on this [blog post][].
 
 [blog post]: https://vincent.bernat.ch/en/blog/2013-lanco
