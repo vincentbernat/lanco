@@ -3,7 +3,7 @@ lanĉo
 
 *Warning*: currently, `lanco` only works with cgroups v1. It could be
 adapted for cgroups v2 but I don't use it anymore and nobody asked
-about it either.
+about it either. Nowadays, `lanco` could be replaced by `systemd-run`.
 
 A more complete presentation can be found on this [blog post][].
 
